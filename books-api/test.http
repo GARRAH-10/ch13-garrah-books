@@ -1,0 +1,33 @@
+@base = http://localhost:8000
+@token = PASTE_ACCESS_TOKEN_HERE
+
+### Health
+GET {{base}}/
+
+### GET endpoint required in the video
+GET {{base}}/api/books
+
+### Login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "member@books.test",
+  "password": "password"
+}
+
+### POST endpoint required in the video
+POST {{base}}/api/books
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Garrah Mobile Development",
+  "author": "Garrah Thabit",
+  "year": 2026,
+  "genre": "Cross-Platform Development"
+}
+
+### Profile
+GET {{base}}/auth/me
+Authorization: Bearer {{token}}
