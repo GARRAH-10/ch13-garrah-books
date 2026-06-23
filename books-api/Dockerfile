@@ -5,7 +5,8 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --opt
 
 FROM php:8.2-apache
 RUN docker-php-ext-install pdo_mysql \
-    && a2enmod rewrite headers
+    && a2dismod mpm_event mpm_worker \
+    && a2enmod mpm_prefork rewrite headers
 WORKDIR /var/www/html
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
