@@ -81,10 +81,10 @@ onMounted(load);
         <span class="tag">{{ b.year }}</span>
         <div class="meta">{{ b.author }} • {{ b.genre }}</div>
       </div>
-      <div class="actions" v-if="canModify(b)">
-        <button @click="startEdit(b)">Edit</button>
-        <button class="danger" v-if="auth.isAdmin" @click="remove(b)">Delete</button>
-      </div>
+      <div class="actions" v-if="auth.isAuthenticated">
+     <button @click="startEdit(b)">Edit</button>
+      <button class="danger" @click="remove(b)">Delete</button>
+       </div>
     </div>
   </div>
   <p v-else class="card" style="text-align: center; color: var(--muted);">
