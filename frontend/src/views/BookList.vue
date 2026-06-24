@@ -4,11 +4,11 @@ import api from '../api/client';
 import { useAuth } from '../stores/auth';
 import BookForm from '../components/BookForm.vue';
 
-const auth   = useAuth();
-const books  = ref([]);
-const q      = ref('');
-const error  = ref('');
-const ok     = ref('');
+const auth = useAuth();
+const books = ref([]);
+const q = ref('');
+const error = ref('');
+const ok = ref('');
 const editing = ref(null); // null | 'new' | book object
 
 const filtered = computed(() => books.value);
@@ -16,15 +16,21 @@ const filtered = computed(() => books.value);
 async function load() {
   error.value = '';
   try {
-    const { data } = await api.get('/api/books', { params: { q: q.value || undefined } });
+    const { data } = await api.get('/api/books', {
+      params: { q: q.value || undefined },
+    });
     books.value = data.data;
   } catch (e) {
-    error.value = e.message;
+    error.value = e.response?.data?.error || e.message;
   }
 }
 
 async function remove(book) {
   if (!confirm(`Delete "${book.title}"?`)) return;
+
+  error.value = '';
+  ok.value = '';
+
   try {
     await api.delete(`/api/books/${book.id}`);
     ok.value = 'Deleted';
@@ -34,15 +40,33 @@ async function remove(book) {
   }
 }
 
-function startCreate()       { editing.value = 'new'; }
-function startEdit(book)     { editing.value = { ...book }; }
-function cancelEdit()        { editing.value = null; }
-async function onSaved(msg)  { ok.value = msg; editing.value = null; await load(); }
+function startCreate() {
+  error.value = '';
+  ok.value = '';
+  editing.value = 'new';
+}
+
+function startEdit(book) {
+  error.value = '';
+  ok.value = '';
+  editing.value = { ...book };
+}
+
+function cancelEdit() {
+  editing.value = null;
+}
+
+async function onSaved(msg) {
+  ok.value = msg;
+  editing.value = null;
+  await load();
+}
 
 function canModify(book) {
   if (!auth.isAuthenticated) return false;
   if (auth.isAdmin) return true;
-  return book.created_by === auth.user.id;
+
+  return String(book.created_by) === String(auth.user?.id);
 }
 
 onMounted(load);
@@ -55,9 +79,11 @@ onMounted(load);
         <label>Search by title or author</label>
         <input v-model="q" placeholder="e.g. clean" @keyup.enter="load" />
       </div>
+
       <div>
         <button class="primary" @click="load">Search</button>
       </div>
+
       <div v-if="auth.isAuthenticated">
         <button class="primary" @click="startCreate">+ New book</button>
       </div>
@@ -72,7 +98,7 @@ onMounted(load);
   />
 
   <p v-if="error" class="alert error">{{ error }}</p>
-  <p v-if="ok"    class="alert ok">{{ ok }}</p>
+  <p v-if="ok" class="alert ok">{{ ok }}</p>
 
   <div class="card" v-if="filtered.length">
     <div class="book" v-for="b in filtered" :key="b.id">
@@ -81,12 +107,14 @@ onMounted(load);
         <span class="tag">{{ b.year }}</span>
         <div class="meta">{{ b.author }} • {{ b.genre }}</div>
       </div>
-      <div class="actions" v-if="auth.isAuthenticated">
-     <button @click="startEdit(b)">Edit</button>
-      <button class="danger" @click="remove(b)">Delete</button>
-       </div>
+
+      <div class="actions" v-if="canModify(b)">
+        <button @click="startEdit(b)">Edit</button>
+        <button class="danger" @click="remove(b)">Delete</button>
+      </div>
     </div>
   </div>
+
   <p v-else class="card" style="text-align: center; color: var(--muted);">
     No books found.
   </p>
